@@ -10,8 +10,9 @@
     </property>
     <property name="mappings">
       <props>
-        <prop key="MyDescription">cm:description</prop>
-        <prop key="DocumentVersion">cm:versionLabel</prop>
+        <prop key="Title">cm:title</prop>
+        <prop key="Subject">cm:description</prop>
+        <prop key="Author">cm:creator</prop>
       </props>
     </property>
   </bean>

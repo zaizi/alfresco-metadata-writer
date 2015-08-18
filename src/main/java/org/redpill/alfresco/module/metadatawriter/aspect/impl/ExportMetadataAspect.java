@@ -6,9 +6,10 @@ import java.util.Map;
 
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.model.ContentModel;
+import org.alfresco.repo.node.NodeServicePolicies;
 import org.alfresco.repo.node.NodeServicePolicies.OnAddAspectPolicy;
 import org.alfresco.repo.node.NodeServicePolicies.OnUpdatePropertiesPolicy;
-import org.alfresco.repo.policy.Behaviour;
+import org.alfresco.repo.policy.Behaviour.NotificationFrequency;
 import org.alfresco.repo.policy.JavaBehaviour;
 import org.alfresco.repo.policy.PolicyComponent;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
@@ -19,7 +20,6 @@ import org.alfresco.service.cmr.lock.LockType;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.version.Version;
-import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,11 +27,10 @@ import org.redpill.alfresco.module.metadatawriter.factories.MetadataServiceRegis
 import org.redpill.alfresco.module.metadatawriter.factories.UnknownServiceNameException;
 import org.redpill.alfresco.module.metadatawriter.model.MetadataWriterModel;
 import org.redpill.alfresco.module.metadatawriter.services.MetadataService;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-public class ExportMetadataAspect implements AfterCreateVersionPolicy, OnUpdatePropertiesPolicy, OnAddAspectPolicy, InitializingBean {
+public class ExportMetadataAspect implements AfterCreateVersionPolicy, OnUpdatePropertiesPolicy, OnAddAspectPolicy {
 
   private static final Log LOG = LogFactory.getLog(ExportMetadataAspect.class);
 
@@ -80,6 +79,27 @@ public class ExportMetadataAspect implements AfterCreateVersionPolicy, OnUpdateP
       LOG.info("Run metadatawriter as System user: " + this.runAsSystem);
     }
   }
+  
+    public void init()
+    {
+        this._policyComponent.bindClassBehaviour(NodeServicePolicies.OnUpdatePropertiesPolicy.QNAME,
+                MetadataWriterModel.ASPECT_METADATA_WRITEABLE, new JavaBehaviour(this, "onUpdateProperties",
+                        NotificationFrequency.TRANSACTION_COMMIT));
+
+        LOG.info("Initialised OnUpdatePropertiesPolicy for metadata writer.");
+
+        this._policyComponent.bindClassBehaviour(NodeServicePolicies.OnAddAspectPolicy.QNAME,
+                MetadataWriterModel.ASPECT_METADATA_WRITEABLE, new JavaBehaviour(this, "onAddAspect",
+                        NotificationFrequency.TRANSACTION_COMMIT));
+
+        LOG.info("Initialised OnAddAspectPolicy for metadata writer.");
+
+        this._policyComponent.bindClassBehaviour(QName.createQName("http://www.alfresco.org", "afterCreateVersion"),
+                MetadataWriterModel.ASPECT_METADATA_WRITEABLE, new JavaBehaviour(this, "afterCreateVersion",
+                        NotificationFrequency.TRANSACTION_COMMIT));
+
+        LOG.info("Initialised afterCreateVersion for metadata writer.");
+    }
 
   /**
    * Internal method @see onUpdateProperties
@@ -232,18 +252,6 @@ public class ExportMetadataAspect implements AfterCreateVersionPolicy, OnUpdateP
     } else {
       _onAddAspect(nodeRef, aspectTypeQName);
     }
-  }
-
-  @Override
-  public void afterPropertiesSet() throws Exception {
-    _policyComponent.bindClassBehaviour(OnUpdatePropertiesPolicy.QNAME, MetadataWriterModel.ASPECT_METADATA_WRITEABLE, new JavaBehaviour(this, "onUpdateProperties",
-        Behaviour.NotificationFrequency.TRANSACTION_COMMIT));
-
-    _policyComponent.bindClassBehaviour(OnAddAspectPolicy.QNAME, MetadataWriterModel.ASPECT_METADATA_WRITEABLE, new JavaBehaviour(this, "onAddAspect",
-        Behaviour.NotificationFrequency.TRANSACTION_COMMIT));
-
-    _policyComponent.bindClassBehaviour(QName.createQName(NamespaceService.ALFRESCO_URI, "afterCreateVersion"), MetadataWriterModel.ASPECT_METADATA_WRITEABLE, new JavaBehaviour(this,
-        "afterCreateVersion", Behaviour.NotificationFrequency.TRANSACTION_COMMIT));
   }
 
   // ---------------------------------------------------

@@ -50,7 +50,7 @@
   </bean>
 
   <!-- The write metadata aspect -->
-  <bean id="metadata-writer.writeMetadataAspect" class="org.redpill.alfresco.module.metadatawriter.aspect.impl.ExportMetadataAspect">
+  <bean id="metadata-writer.writeMetadataAspect" class="org.redpill.alfresco.module.metadatawriter.aspect.impl.ExportMetadataAspect" init-method="init">
     <property name="metadataServiceRegistry" ref="metadata-writer.serviceRegistry" />
     <property name="nodeService" ref="NodeService" />
     <property name="policyComponent" ref="policyComponent" />
